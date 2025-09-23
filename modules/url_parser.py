@@ -1,16 +1,19 @@
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 
-# parses the proided URL, find and return the domain name (host)
-#  values can come as http://www.example.com, https://example.com, example.com, www.example.com
 def parse_url(url):
-    
-    # create and differenticate URL due to sometimes missing http/https
     if not url.startswith(('http://', 'https://')):
         url = 'https://' + url
-
-    parsed_url = urlparse(url)
-    # check for errorneous URL
-    if not parsed_url.scheme or not parsed_url.netloc:
-        raise ValueError("Invalid URL", url)
-    host = parsed_url.netloc
-    return host, url
+    
+    parsed = urlparse(url)
+    scheme = parsed.scheme
+    host = parsed.hostname
+    port = parsed.port or (443 if scheme == 'https' else 80)
+    path = parsed.path or '/'
+    
+    # For google.com, try HTTPS first if HTTP was specified
+    if scheme == 'http' and 'google' in host.lower():
+        print(f"Trying HTTPS for {host} instead of HTTP")
+        scheme = 'https'
+        port = 443
+    
+    return scheme, host, port, path

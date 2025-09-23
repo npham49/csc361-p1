@@ -1,25 +1,19 @@
 import sys
-
-from modules import url_parser
-from modules import http_client
+from modules.http_client import send_request
 
 def main():
     if len(sys.argv) > 1:
-        first_arg = sys.argv[1]
-        print(f"First argument: {first_arg}")
-
-        # Call the URL parser and print the host
-        host, parsed_url = url_parser.parse_url(first_arg)
-        print(f"Host: {host}")
+        url = sys.argv[1]
+        print(f"Testing URL: {url}")
         
-        # send request to host
-        status_code = http_client.send_request(parsed_url)
-        if status_code is not None:
-            print(f"Response Status Code: {status_code}")
+        # Send request - this will handle all the parsing, connection, and printing
+        result = send_request(url)
+        if result:
+            print("\nRequest completed successfully!")
         else:
-            print("Failed to get a response.")
+            print("\nRequest failed.")
     else:
-        print("No arguments provided")
+        print("Usage: python main.py <URL>")
 
 if __name__ == "__main__":
     main()
