@@ -3,7 +3,7 @@ from modules.cookie_parser import parse_cookies
 def analyze_and_print_response(method, url, request_headers, status_code, reason, response_headers, body):
     # Print request
     print("---Request begin---")
-    print(f"{method} {url} HTTP/1.1")
+    print(f"{method} {url}")
     for header, value in request_headers.items():
         print(f"{header}: {value}")
     print("---Request end---")
@@ -12,7 +12,7 @@ def analyze_and_print_response(method, url, request_headers, status_code, reason
     
     # Print response headers
     print("---Response header ---")
-    print(f"HTTP/1.1 {status_code} {reason}")
+    print(f"{status_code} {reason}")
     
     # Handle Set-Cookie headers specially
     set_cookie_values = []
@@ -29,11 +29,15 @@ def analyze_and_print_response(method, url, request_headers, status_code, reason
                 print(f"{header}: {', '.join(value)}")
             else:
                 print(f"{header}: {value}")
+                
+    final_cookies_list = []
     
     # Parse and print cookies using cookie_parser
     if set_cookie_values:
         for cookie_str in set_cookie_values:
             cookies = parse_cookies(cookie_str)
+            
+            final_cookies_list.extend(cookies)
             for cookie in cookies:
                 print(f"Set-Cookie: {cookie['original_string']}")
     print()
@@ -41,3 +45,7 @@ def analyze_and_print_response(method, url, request_headers, status_code, reason
     # Print response body
     print("--- Response body ---")
     print(body)
+    
+    print(f"length of cookies: {len(set_cookie_values)}")
+
+    return final_cookies_list

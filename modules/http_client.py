@@ -1,5 +1,6 @@
 import socket
 import ssl
+import modules.final_tests as final_tests
 import modules.url_parser as url_parser
 import modules.response_analyzer as response_analyzer
 import modules.url_parser as url_parser
@@ -17,12 +18,10 @@ def create_connection(host, port, use_ssl=False):
         
         if use_ssl:
             context = ssl.create_default_context()
-            # Disable cert verification like in reference
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
             sock = context.wrap_socket(sock, server_hostname=host)
             print("SSL handshake completed")
-        
         return sock
     except Exception as e:
         sock.close()
@@ -35,18 +34,16 @@ def build_http_request(method, path, host, port, scheme):
     if (scheme == 'http' and port != 80) or (scheme == 'https' and port != 443):
         host_header = f"{host}:{port}"
     
-    # Simplified request - just the essentials that work
     request_lines = [
         f"{method} {path} HTTP/1.1",
         f"Host: {host_header}",
         "Connection: close",
         "",  # Empty line ends headers
-        ""   # Extra empty line to ensure proper termination
+        ""   # Had some issues with the request and this helped
     ]
     
     request_string = "\r\n".join(request_lines)
     
-    # Store headers for printing
     headers_dict = {
         'Host': host_header,
         'Connection': 'close'
@@ -54,10 +51,10 @@ def build_http_request(method, path, host, port, scheme):
     
     # Print actual request with proper newlines
     print("Built request:")
-    for line in request_lines[:-1]:  # Don't print the last empty line
+    for line in request_lines[:-1]:
         if line:
             print(line)
-    print()  # Empty line at end
+    print()
     
     return request_string, headers_dict
 
@@ -77,13 +74,12 @@ def receive_response(sock):
     # Set a timeout for receiving data
     sock.settimeout(10)
     
+    # Had an issue with headers coming back not fully received, so loop until we get headers
     try:
         # Receive data until we get complete headers (\r\n\r\n) or timeout
         header_end_found = False
-        max_attempts = 50  # Prevent infinite loop
-        attempts = 0
         
-        while not header_end_found and attempts < max_attempts:
+        while not header_end_found:
             try:
                 chunk = sock.recv(4096)
                 if not chunk:
@@ -98,8 +94,6 @@ def receive_response(sock):
                     header_end_found = True
                     print("Complete headers received")
                     break
-                    
-                attempts += 1
                 
             except socket.timeout:
                 print("Timeout waiting for more data")
@@ -117,6 +111,9 @@ def receive_response(sock):
     # Check if we got any data
     if not response_data:
         raise Exception("No response data received")
+    
+    # print raw response for debugging
+    print(response_data.decode('utf-8', errors='ignore'))
     
     # If we don't have complete headers, just work with what we have
     if b'\r\n\r\n' not in response_data:
@@ -179,16 +176,12 @@ def receive_response(sock):
     
     return status_code, reason, headers, body
 
-
 def send_request(url):
     try:
-        # Step 1: Parse URL using url_parser
-
         scheme, host, port, path = url_parser.parse_url(url)
         
         use_ssl = (scheme == 'https')
         
-        # Step 2: Create connection
         sock = create_connection(host, port, use_ssl)
         
         try:
@@ -198,14 +191,13 @@ def send_request(url):
             
             status_code, reason, headers, body = receive_response(sock)
             
-            response_analyzer.analyze_and_print_response(
+            cookies = response_analyzer.analyze_and_print_response(
                 'GET', f"{scheme}://{host}:{port}{path}", 
                 request_headers, status_code, reason, headers, body
             )
             
             # Handle redirects
-            redirect_count = 0
-            while 300 <= status_code < 400 and redirect_count < 5:
+            while 300 <= status_code < 400:
                 redirect_url = headers.get('Location')
                 if not redirect_url:
                     break
@@ -216,10 +208,21 @@ def send_request(url):
                 # Recursive call for redirect
                 return send_request(redirect_url)
             
+            # If we reach here, no more redirects
+            print(f"\nFinal response received with status code {status_code}")
+            
+            # Test HTTP/2 support with the final URL
+            support_http2 = final_tests.test_http2_support(scheme, host, port)
+            
+            password_protected = final_tests.check_password_protected(status_code, headers)
+
             # Return response data
             return {
                 'status_code': status_code,
                 'headers': headers,
+                'support_http2': support_http2,
+                'password_protected': password_protected,
+                'cookies': cookies,
                 'body': body,
                 'url': f"{scheme}://{host}:{port}{path}"
             }
