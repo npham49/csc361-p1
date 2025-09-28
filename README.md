@@ -52,3 +52,40 @@ The project is structured into several modules, each has a set of functions to h
 3. The request is sent to the server, and the response is received. The response is read in chunks until the headers are fully received. This is parsed to extract the status code and headers. All the headers is also passed to `response_analyzer.py` to extract cookies (this is done using `cookie_parser.py`, a RegEx is ran to extract all cookies from the `Set-Cookie` headers) and print out relevant information. If the status code is >300 and <400, it means it's a redirect, so it will follow the redirect by calling `send_request` again with the new URL recursively. The cookie information is also passed along to the next request if there are any cookies set.
 4. After the response is received, `final_tests.py` is used to check if the server supports HTTP 2.0 by sending an HTTP 2.0 request to the final redirect URL. Another check that is done is with the status code, if it's 401 or 403 or has the `WWW-Authenticate` header, it means the site is password protected.
 5. Finally, all information is returned to the `main.py` and printed out.
+
+### Parsing the URL (`url_parser.py` module)
+
+The URL is parsed using the `url_parser.py` module, which extracts the following components:
+
+- **Scheme**: The protocol used (e.g., HTTP or HTTPS). Sometimes the user might not provide this, so we default to HTTPS.
+- **Host**: The domain name or IP address of the server, this is provided by the user as a parameter.
+- **Port**: The port number to connect to (default is 80 for HTTP and 443 for HTTPS).
+- **Path**: The specific resource being requested.
+
+### Cookie parsing (`cookie_parser.py` module)
+
+Cookies are parsed using a regular expression to handle the complexity of cookie strings, especially when attributes like `Expires` contain commas. The RegEx used is `,\s*(?=[a-zA-Z][a-zA-Z0-9_]*\s*=)`, which effectively splits cookies at commas that are followed by a valid cookie name and equals sign, ensuring that commas within attribute values do not cause incorrect splits.
+
+The cookie object generated per cookie contains the following attributes:
+
+- **original_string**: The original cookie string as received from the server.
+- **subvalues**: A list of key-value pairs representing the cookie's attributes. (with `name` and `value` being the values)
+
+### HTTP 2.0 and Password Protection Check (`final_tests.py` module)
+
+To check if a server supports HTTP 2.0, an HTTP 2.0 request is sent to the server using the `http_client.py` module. If the server responds appropriately, it indicates support for HTTP 2.0. Another check that is done is with the status code, if it's 401 or 403 or has the `WWW-Authenticate` header, it means the site is password protected.
+
+HTTP 2.0 requests are sent using:
+
+```python
+# Create SSL context with ALPN for HTTP/2 testing
+context = ssl.create_default_context()
+context.check_hostname = False
+context.set_alpn_protocols(['h2', 'http/1.1'])
+```
+
+This was covered in one of the tutorials.
+
+## LLM Usage
+
+This is covered in [LLM.md](LLM.md)
