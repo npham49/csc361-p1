@@ -75,6 +75,7 @@ def receive_response(sock):
     sock.settimeout(10)
     
     # Had an issue with headers coming back not fully received, so loop until we get headers
+    # Also we only need headers to determine status, cookies, etc. everything that the assignment needs
     try:
         # Receive data until we get complete headers (\r\n\r\n) or timeout
         header_end_found = False
@@ -113,7 +114,7 @@ def receive_response(sock):
         raise Exception("No response data received")
     
     # print raw response for debugging
-    print(response_data.decode('utf-8', errors='ignore'))
+    print("RAW RES:", response_data.decode('utf-8', errors='ignore'), "END RES\n")
     
     # If we don't have complete headers, just work with what we have
     if b'\r\n\r\n' not in response_data:
