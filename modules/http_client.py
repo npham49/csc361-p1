@@ -225,7 +225,7 @@ def send_request(url):
                 'password_protected': password_protected,
                 'cookies': cookies,
                 'body': body,
-                'url': f"{scheme}://{host}:{port}{path}"
+                'url': f"{scheme}://{host}{path}"
             }
             
         finally:
