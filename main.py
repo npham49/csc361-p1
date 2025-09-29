@@ -30,7 +30,7 @@ def main():
                         print(f"cookie name: {cookie_name}, {'; '.join(remaining_subvalues)}")
                     else:
                         print(f"cookie name: {cookie_name}")
-            print(f"3. Password protected: {result['password_protected']}")
+            print(f"3. Password protected: {'yes' if result['password_protected'] else 'no'}")
         else:
             print("\nRequest failed.")
     else:
