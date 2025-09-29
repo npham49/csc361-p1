@@ -19,19 +19,27 @@ WebTester is a simple HTTP in Python client that collects information regarding 
 Run the following command in your terminal:
 
 ```bash
+python3 WebTester.py <URL>
+```
+
+or if you have Python 3 as the default python interpreter:
+
+```bash
 python WebTester.py <URL>
 ```
+
+If your Python 3 interpreter is named differently, adjust the command accordingly (e.g., `python` or `python3.8`).
 
 Where URL can be any valid HTTP or HTTPS URL, for example:
 
 ```bash
-python WebTester.py http://example.com
+python3 WebTester.py http://example.com
 ```
 
 or
 
 ```bash
-python WebTester.py example.com
+python3 WebTester.py example.com
 ```
 
 ## Architecture:
